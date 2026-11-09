@@ -1,0 +1,243 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_SEATS 10
+
+// Passenger Node for Linked List
+typedef struct Node {
+    int PNR;
+    char name[50];
+    int age;
+    char gender[10];
+    int seatNumber;
+    struct Node* next;
+} Node;
+
+// Queue Node for Waiting List
+typedef struct QueueNode {
+    int PNR;
+    char name[50];
+    int age;
+    char gender[10];
+    struct QueueNode* next;
+} QueueNode;
+
+// Queue Structure
+typedef struct Queue {
+    QueueNode* front;
+    QueueNode* rear;
+} Queue;
+
+// Global Data Structures
+int seats[MAX_SEATS] = {0}; // Array: 0 = Available, 1 = Booked
+Node* head = NULL;          // Linked List Head for Booked Tickets
+Queue waitingList;          // FIFO Queue for Waiting List
+int globalPNR = 1001;
+
+// Function Prototypes
+void initQueue(Queue* q);
+void bookTicket(char name[], int age, char gender[]);
+void cancelTicket(int pnr);
+void enqueue(Queue* q, int pnr, char name[], int age, char gender[]);
+QueueNode* dequeue(Queue* q);
+void displayBookings();
+void displayWaitingList();
+int getAvailableSeat();
+
+int main() {
+    initQueue(&waitingList);
+    int choice;
+    char name[50];
+    int age;
+    char gender[10];
+    int pnr;
+
+    while (1) {
+        printf("\n=== TRAIN RESERVATION SYSTEM ===\n");
+        printf("1. Book Ticket\n");
+        printf("2. Cancel Ticket\n");
+        printf("3. Display Confirmed Bookings\n");
+        printf("4. Display Waiting List\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        
+        if (scanf("%d", &choice) != 1) {
+            printf("[ERROR] Invalid choice input.\n");
+            // Clear input buffer to prevent infinite loop on bad input
+            while (getchar() != '\n');
+            continue;
+        }
+        
+        // Clear trailing newline from buffer before reading strings
+        getchar(); 
+
+        switch (choice) {
+            case 1:
+                printf("Enter Passenger Name: ");
+                fgets(name, sizeof(name), stdin);
+                name[strcspn(name, "\n")] = '\0'; // Remove trailing newline
+
+                printf("Enter Passenger Age: ");
+                scanf("%d", &age);
+                getchar(); // Consume trailing newline
+
+                printf("Enter Passenger Gender: ");
+                fgets(gender, sizeof(gender), stdin);
+                gender[strcspn(gender, "\n")] = '\0';
+
+                bookTicket(name, age, gender);
+                break;
+
+            case 2:
+                printf("Enter PNR to Cancel: ");
+                scanf("%d", &pnr);
+                cancelTicket(pnr);
+                break;
+
+            case 3:
+                displayBookings();
+                break;
+
+            case 4:
+                displayWaitingList();
+                break;
+
+            case 5:
+                printf("Exiting System. Goodbye!\n");
+                return 0;
+
+            default:
+                printf("[ERROR] Invalid choice! Please select 1-5.\n");
+        }
+    }
+    return 0;
+}
+
+void initQueue(Queue* q) {
+    q->front = q->rear = NULL;
+}
+
+int getAvailableSeat() {
+    for (int i = 0; i < MAX_SEATS; i++) {
+        if (seats[i] == 0) return i + 1; // 1-indexed seats
+    }
+    return -1; // No seats available
+}
+
+void bookTicket(char name[], int age, char gender[]) {
+    int seatNo = getAvailableSeat();
+
+    if (seatNo != -1) {
+        seats[seatNo - 1] = 1;
+        Node* newNode = (Node*)malloc(sizeof(Node));
+        newNode->PNR = globalPNR++;
+        strcpy(newNode->name, name);
+        newNode->age = age;
+        strcpy(newNode->gender, gender);
+        newNode->seatNumber = seatNo;
+        newNode->next = head;
+        head = newNode;
+        printf("\n[CONFIRMED] Booked PNR %d for %s on Seat %d\n", newNode->PNR, name, seatNo);
+    } else {
+        enqueue(&waitingList, globalPNR++, name, age, gender);
+        printf("\n[WAITING LIST] Train Full. Added %s to Waiting Queue.\n", name);
+    }
+}
+
+void cancelTicket(int pnr) {
+    Node *temp = head, *prev = NULL;
+
+    while (temp != NULL && temp->PNR != pnr) {
+        prev = temp;
+        temp = temp->next;
+    }
+
+    if (temp == NULL) {
+        printf("\n[ERROR] PNR %d not found in confirmed list.\n", pnr);
+        return;
+    }
+
+    int freedSeat = temp->seatNumber;
+    seats[freedSeat - 1] = 0;
+
+    if (prev == NULL) head = temp->next;
+    else prev->next = temp->next;
+
+    printf("\n[CANCELLED] PNR %d cancelled. Seat %d freed.\n", pnr, freedSeat);
+    free(temp);
+
+    // Promote first person from Waiting Queue (FIFO)
+    QueueNode* promoted = dequeue(&waitingList);
+    if (promoted != NULL) {
+        seats[freedSeat - 1] = 1;
+        Node* newNode = (Node*)malloc(sizeof(Node));
+        newNode->PNR = promoted->PNR;
+        strcpy(newNode->name, promoted->name);
+        newNode->age = promoted->age;
+        strcpy(newNode->gender, promoted->gender);
+        newNode->seatNumber = freedSeat;
+        newNode->next = head;
+        head = newNode;
+        printf("[PROMOTED] Waiting List Passenger %s auto-assigned Seat %d (PNR %d)\n", 
+               promoted->name, freedSeat, promoted->PNR);
+        free(promoted);
+    }
+}
+
+void enqueue(Queue* q, int pnr, char name[], int age, char gender[]) {
+    QueueNode* newNode = (QueueNode*)malloc(sizeof(QueueNode));
+    newNode->PNR = pnr;
+    strcpy(newNode->name, name);
+    newNode->age = age;
+    strcpy(newNode->gender, gender);
+    newNode->next = NULL;
+
+    if (q->rear == NULL) {
+        q->front = q->rear = newNode;
+        return;
+    }
+    q->rear->next = newNode;
+    q->rear = newNode;
+}
+
+QueueNode* dequeue(Queue* q) {
+    if (q->front == NULL) return NULL;
+    QueueNode* temp = q->front;
+    q->front = q->front->next;
+    if (q->front == NULL) q->rear = NULL;
+    return temp;
+}
+
+void displayBookings() {
+    printf("\n--- CONFIRMED BOOKINGS ---\n");
+    if (head == NULL) {
+        printf("No confirmed bookings.\n");
+        return;
+    }
+    
+    Node* temp = head;
+    while (temp != NULL) {
+        printf("PNR: %d | Name: %s | Age: %d | Gender: %s | Seat: %d\n", 
+               temp->PNR, temp->name, temp->age, temp->gender, temp->seatNumber);
+        temp = temp->next;
+    }
+    printf("--------------------------\n");
+}
+
+void displayWaitingList() {
+    printf("\n--- WAITING LIST QUEUE ---\n");
+    if (waitingList.front == NULL) {
+        printf("Waiting list is empty.\n");
+        return;
+    }
+    
+    QueueNode* temp = waitingList.front;
+    int position = 1;
+    while (temp != NULL) {
+        printf("Pos: %d | PNR: %d | Name: %s | Age: %d | Gender: %s\n", 
+               position++, temp->PNR, temp->name, temp->age, temp->gender);
+        temp = temp->next;
+    }
+    printf("--------------------------\n");
+}
