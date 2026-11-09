@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train Reservation System - Data Structures Simulation</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-50 border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-brand-600 rounded-lg text-white shadow-lg shadow-brand-500/20">
+                    <i class="fa-solid fa-train text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-900">ExpressRail DS Simulator</h1>
+                    <p class="text-xs text-slate-500">C Data Structures: Arrays, Linked Lists & Queues</p>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/50">
+                <button id="tab-interactive" onclick="switchTab('interactive')" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-600 text-white shadow-sm">
+                    <i class="fa-solid fa-desktop mr-1.5"></i> Interactive App
+                </button>
+                <button id="tab-docs" onclick="switchTab('docs')" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:text-slate-900">
+                    <i class="fa-solid fa-book-open mr-1.5"></i> Concept Docs
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- TAB 1: INTERACTIVE SIMULATION -->
+        <div id="view-interactive" class="space-y-6">
+            
+            <!-- System Stats & Dynamic Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Coach Seats</p>
+                        <p id="stat-total-seats" class="text-2xl font-bold text-slate-900 mt-1">10 <span class="text-xs text-slate-500 font-normal">(Array)</span></p>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                        <i class="fa-solid fa-chair text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Confirmed Bookings</p>
+                        <p id="stat-confirmed" class="text-2xl font-bold text-emerald-600 mt-1">0 <span class="text-xs text-slate-500 font-normal">(Linked List)</span></p>
+                    </div>
+                    <div class="p-3 bg-brand-50 text-brand-600 rounded-lg">
+                        <i class="fa-solid fa-ticket text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Waiting List Queue</p>
+                        <p id="stat-waiting" class="text-2xl font-bold text-amber-600 mt-1">0 <span class="text-xs text-slate-500 font-normal">(FIFO Queue)</span></p>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                        <i class="fa-solid fa-users-line text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">System Status</p>
+                        <p id="stat-status" class="text-sm font-semibold text-emerald-600 mt-2 flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-ping"></span> Seats Available
+                        </p>
+                    </div>
+                    <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
+                        <i class="fa-solid fa-server text-lg"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Control Form & Action Dashboard -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Action Panel -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2 pb-3 mb-4 border-b border-slate-200">
+                            <i class="fa-solid fa-user-plus text-brand-600"></i>
+                            <h2 class="font-semibold text-slate-800">Book / Queue Ticket</h2>
+                        </div>
+                        
+                        <form id="booking-form" onsubmit="handleBookTicket(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Passenger Name</label>
+                                <input type="text" id="passenger-name" required placeholder="e.g. Rahul Sharma" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-brand-500 transition-colors">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Age</label>
+                                    <input type="number" id="passenger-age" min="1" max="120" required placeholder="28" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-brand-500 transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Gender</label>
+                                    <select id="passenger-gender" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-brand-500 transition-colors">
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-brand-600/20 transition-all flex items-center justify-center space-x-2 text-sm active:scale-98">
+                                <i class="fa-solid fa-ticket"></i>
+                                <span>Process Reservation</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="pt-4 mt-6 border-t border-slate-200 space-y-2">
+                        <p class="text-xs text-slate-500 font-medium">Quick Simulator Actions</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="seedRandomPassengers()" class="bg-white hover:bg-slate-100 text-slate-700 text-xs py-2 px-3 rounded-lg border border-slate-300 transition-colors flex items-center justify-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-dice"></i>
+                                <span>Auto-Fill (5)</span>
+                            </button>
+                            <button onclick="resetSystem()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                <span>Reset System</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seat Map Array Visualization -->
+                <div class="lg:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-cubes text-emerald-600"></i>
+                                <h2 class="font-semibold text-slate-800">1. Fixed Array: Seat Matrix Mapping</h2>
+                            </div>
+                            <span class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-md font-mono">int seats[10]</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4">Direct indexing array representation. Green indicates allocated seat IDs, grey indicates vacant slots.</p>
+                        
+                        <!-- Grid Layout for 10 Seats -->
+                        <div id="seats-grid" class="grid grid-cols-5 sm:grid-cols-10 gap-2.5 mb-4">
+                            <!-- Dynamically generated via JS -->
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200 gap-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-md bg-emerald-500 inline-block"></span>
+                            <span>Allocated Seat</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-md bg-slate-100 border border-slate-300 inline-block"></span>
+                            <span>Vacant Seat</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-slate-500">
+                            <i class="fa-solid fa-circle-info text-brand-500"></i>
+                            <span>Array Access: O(1) Time</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Linked List (Confirmed) & FIFO Queue (Waiting List) Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Linked List Visualization -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-link text-brand-600"></i>
+                            <h2 class="font-semibold text-slate-800">2. Linked List: Active Reservations</h2>
+                        </div>
+                        <span class="text-xs bg-brand-50 text-brand-600 border border-brand-200 px-2.5 py-1 rounded-md font-mono">struct Node* head</span>
+                    </div>
+                    
+                    <p class="text-xs text-slate-500 mb-4">Dynamic singly linked list holding passenger records with pointers to the next node (`struct Node* next`).</p>
+
+                    <div id="linked-list-container" class="flex-grow min-h-[220px] max-h-[320px] overflow-y-auto custom-scrollbar pr-2 space-y-2">
+                        <!-- Dynamic Nodes -->
+                    </div>
+                </div>
+
+                <!-- FIFO Queue Visualization -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-layer-group text-amber-600"></i>
+                            <h2 class="font-semibold text-slate-800">3. FIFO Queue: Waiting List</h2>
+                        </div>
+                        <div class="flex space-x-2">
+                            <span class="text-xs bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-md font-mono">front & rear Pointers</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-500 mb-4">First-In-First-Out (FIFO) structure. When a confirmed ticket is cancelled, the head of this queue gets auto-promoted.</p>
+
+                    <div id="queue-container" class="flex-grow min-h-[220px] max-h-[320px] overflow-y-auto custom-scrollbar pr-2 space-y-2">
+                        <!-- Dynamic Queue Items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: CONCEPT DOCUMENTATION -->
+        <div id="view-docs" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Data Structure 1 -->
+                <div class="bg-slate-50 border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3 text-lg">
+                        <i class="fa-solid fa-table-cells"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-slate-900">1. Arrays (Seat Mapping)</h3>
+                    <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                        Arrays provide O(1) constant time lookup for seat status (0 for vacant, 1 for occupied). In C, `int seats[10]` acts as a fixed physical representation of the coach layout.
+                    </p>
+                    <ul class="mt-3 text-xs text-slate-700 space-y-1 list-disc list-inside">
+                        <li>Fixed size contiguous memory allocation.</li>
+                        <li>Instant seat lookup via index.</li>
+                    </ul>
+                </div>
+
+                <!-- Data Structure 2 -->
+                <div class="bg-slate-50 border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center mb-3 text-lg">
+                        <i class="fa-solid fa-diagram-project"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-slate-900">2. Linked Lists (Bookings)</h3>
+                    <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                        Dynamic allocation of confirmed passenger tickets. As bookings occur dynamically, dynamic `Node*` pointers prevent memory waste and allow arbitrary node deletion on cancellation.
+                    </p>
+                    <ul class="mt-3 text-xs text-slate-700 space-y-1 list-disc list-inside">
+                        <li>Dynamic memory sizing via `malloc()`.</li>
+                        <li>Dynamic insertion & node pointer unlinking.</li>
+                    </ul>
+                </div>
+
+                <!-- Data Structure 3 -->
+                <div class="bg-slate-50 border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-3 text-lg">
+                        <i class="fa-solid fa-arrows-to-line"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-slate-900">3. FIFO Queue (Waiting List)</h3>
+                    <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                        Fairness algorithm adhering to First-In-First-Out. Passengers who try to book full trains enter the tail (`rear`). When a seat is freed, the head (`front`) passenger is dequeued and promoted.
+                    </p>
+                    <ul class="mt-3 text-xs text-slate-700 space-y-1 list-disc list-inside">
+                        <li>Strict Enqueue (`rear`) & Dequeue (`front`).</li>
+                        <li>Ensures fair priority reservation promotion.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Workflow Visual Map -->
+            <div class="bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+                <h3 class="text-sm font-semibold text-slate-800 mb-4 flex items-center">
+                    <i class="fa-solid fa-route text-brand-600 mr-2"></i> Reservation & Cancellation Life Cycle
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-brand-600 font-bold mb-1">STEP 1: BOOKING REQUEST</div>
+                        <p class="text-slate-600">System checks `seats[10]` array for `0`. If found, allocates index, appends to Linked List.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-amber-600 font-bold mb-1">STEP 2: OVERFLOW TO QUEUE</div>
+                        <p class="text-slate-600">If all array indices are `1`, enqueue passenger onto the FIFO Queue waiting list.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-emerald-600 font-bold mb-1">STEP 3: CANCELLATION & PROMOTION</div>
+                        <p class="text-slate-600">Removing node from Linked List triggers `dequeue()`. Next queued passenger inherits freed seat.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-50 border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            Train Reservation System • Educational Data Structures Simulation
+        </div>
+    </footer>
+
+    <!-- Embedded JavaScript Simulation Engine -->
+    <script>
+        // System Parameters
+        const TOTAL_SEATS = 10;
+        let pnrCounter = 1001;
+
+        // Data Structures State
+        let seats = new Array(TOTAL_SEATS).fill(null);
+        let confirmedList = null;
+        let waitingQueue = { front: null, rear: null, count: 0 };
+
+        class Node {
+            constructor(pnr, name, age, gender, seatNumber) {
+                this.pnr = pnr;
+                this.name = name;
+                this.age = age;
+                this.gender = gender;
+                this.seatNumber = seatNumber;
+                this.next = null;
+            }
+        }
+
+        class QueueNode {
+            constructor(pnr, name, age, gender) {
+                this.pnr = pnr;
+                this.name = name;
+                this.age = age;
+                this.gender = gender;
+                this.next = null;
+            }
+        }
+
+        window.onload = function() {
+            renderSeatsArray();
+            renderLinkedList();
+            renderQueue();
+            updateStats();
+        };
+
+        function switchTab(tabName) {
+            const tabs = ['interactive', 'docs'];
+            tabs.forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('bg-brand-600', 'text-white', 'shadow-sm');
+                document.getElementById(`tab-${t}`).classList.add('text-slate-600');
+            });
+
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('bg-brand-600', 'text-white', 'shadow-sm');
+            document.getElementById(`tab-${tabName}`).classList.remove('text-slate-600');
+        }
+
+        function handleBookTicket(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('passenger-name');
+            const ageInput = document.getElementById('passenger-age');
+            const genderInput = document.getElementById('passenger-gender');
+
+            const name = nameInput.value.trim();
+            const age = parseInt(ageInput.value);
+            const gender = genderInput.value;
+
+            if (!name || isNaN(age)) return;
+
+            processReservation(name, age, gender);
+
+            nameInput.value = '';
+            ageInput.value = '';
+        }
+
+        function processReservation(name, age, gender) {
+            let allocatedSeat = -1;
+            for (let i = 0; i < TOTAL_SEATS; i++) {
+                if (seats[i] === null) {
+                    allocatedSeat = i + 1;
+                    break;
+                }
+            }
+
+            const currentPNR = pnrCounter++;
+
+            if (allocatedSeat !== -1) {
+                seats[allocatedSeat - 1] = { pnr: currentPNR, name };
+                const newNode = new Node(currentPNR, name, age, gender, allocatedSeat);
+                newNode.next = confirmedList;
+                confirmedList = newNode;
+            } else {
+                enqueueQueue(currentPNR, name, age, gender);
+            }
+
+            updateUI();
+        }
+
+        function cancelTicket(pnr) {
+            let prev = null;
+            let curr = confirmedList;
+
+            while (curr !== null && curr.pnr !== pnr) {
+                prev = curr;
+                curr = curr.next;
+            }
+
+            if (!curr) return;
+
+            const freedSeat = curr.seatNumber;
+
+            if (prev === null) {
+                confirmedList = curr.next;
+            } else {
+                prev.next = curr.next;
+            }
+
+            seats[freedSeat - 1] = null;
+
+            if (waitingQueue.front !== null) {
+                const promoted = dequeueQueue();
+                if (promoted) {
+                    seats[freedSeat - 1] = { pnr: promoted.pnr, name: promoted.name };
+                    const newNode = new Node(promoted.pnr, promoted.name, promoted.age, promoted.gender, freedSeat);
+                    newNode.next = confirmedList;
+                    confirmedList = newNode;
+                }
+            }
+
+            updateUI();
+        }
+
+        function enqueueQueue(pnr, name, age, gender) {
+            const qNode = new QueueNode(pnr, name, age, gender);
+            if (waitingQueue.rear === null) {
+                waitingQueue.front = qNode;
+                waitingQueue.rear = qNode;
+            } else {
+                waitingQueue.rear.next = qNode;
+                waitingQueue.rear = qNode;
+            }
+            waitingQueue.count++;
+        }
+
+        function dequeueQueue() {
+            if (waitingQueue.front === null) return null;
+            const temp = waitingQueue.front;
+            waitingQueue.front = waitingQueue.front.next;
+
+            if (waitingQueue.front === null) {
+                waitingQueue.rear = null;
+            }
+            waitingQueue.count--;
+            return temp;
+        }
+
+        function updateUI() {
+            renderSeatsArray();
+            renderLinkedList();
+            renderQueue();
+            updateStats();
+        }
+
+        function renderSeatsArray() {
+            const container = document.getElementById('seats-grid');
+            container.innerHTML = '';
+
+            for (let i = 0; i < TOTAL_SEATS; i++) {
+                const isBooked = seats[i] !== null;
+                const seatNo = i + 1;
+                
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-xl border flex flex-col justify-between transition-all ${
+                    isBooked 
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
+                        : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                }`;
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-mono font-bold">#${seatNo}</span>
+                        <i class="fa-solid ${isBooked ? 'fa-user-check text-emerald-600' : 'fa-chair text-slate-300'} text-xs"></i>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-xs font-semibold truncate">${isBooked ? seats[i].name : 'Vacant'}</p>
+                        <p class="text-[9px] font-mono ${isBooked ? 'text-emerald-700/80' : 'text-slate-400'}">
+                            ${isBooked ? 'PNR ' + seats[i].pnr : 'seats[' + i + ']'}
+                        </p>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        function renderLinkedList() {
+            const container = document.getElementById('linked-list-container');
+            container.innerHTML = '';
+
+            if (confirmedList === null) {
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                        <i class="fa-solid fa-link-slash text-2xl mb-2"></i>
+                        <p class="text-xs">Linked list is empty. No active reservations.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let curr = confirmedList;
+            while (curr !== null) {
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'bg-white border border-brand-200 hover:border-brand-500 p-3 rounded-xl flex items-center justify-between shadow-sm transition-all';
+                
+                nodeEl.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs">
+                            S${curr.seatNumber}
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <p class="text-xs font-semibold text-slate-800">${curr.name}</p>
+                                <span class="text-[10px] bg-brand-50 text-brand-600 border border-brand-200 px-1.5 py-0.5 rounded font-mono">PNR: ${curr.pnr}</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500">${curr.gender}, ${curr.age} yrs • Node ptr: <span class="font-mono text-slate-400">${curr.next ? '0x' + curr.next.pnr : 'NULL'}</span></p>
+                        </div>
+                    </div>
+                    <button onclick="cancelTicket(${curr.pnr})" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2.5 py-1 rounded-lg transition-colors flex items-center space-x-1">
+                        <i class="fa-solid fa-xmark"></i>
+                        <span>Cancel</span>
+                    </button>
+                `;
+                container.appendChild(nodeEl);
+                curr = curr.next;
+            }
+        }
+
+        function renderQueue() {
+            const container = document.getElementById('queue-container');
+            container.innerHTML = '';
+
+            if (waitingQueue.front === null) {
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                        <i class="fa-solid fa-check-circle text-2xl mb-2 text-slate-300"></i>
+                        <p class="text-xs">Waiting queue is empty. Seats available!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let curr = waitingQueue.front;
+            let pos = 1;
+            while (curr !== null) {
+                const isFront = pos === 1;
+                const isRear = curr.next === null;
+
+                const qEl = document.createElement('div');
+                qEl.className = 'bg-white border border-amber-200 p-3 rounded-xl flex items-center justify-between shadow-sm';
+                
+                qEl.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs">
+                            #${pos}
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <p class="text-xs font-semibold text-slate-800">${curr.name}</p>
+                                <span class="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-mono">PNR: ${curr.pnr}</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500">${curr.gender}, ${curr.age} yrs</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-1">
+                        ${isFront ? '<span class="text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded">FRONT (Next Up)</span>' : ''}
+                        ${isRear ? '<span class="text-[9px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded">REAR</span>' : ''}
+                    </div>
+                `;
+                container.appendChild(qEl);
+                curr = curr.next;
+                pos++;
+            }
+        }
+
+        function updateStats() {
+            let bookedCount = 0;
+            for (let i = 0; i < TOTAL_SEATS; i++) {
+                if (seats[i] !== null) bookedCount++;
+            }
+
+            document.getElementById('stat-confirmed').innerText = bookedCount;
+            document.getElementById('stat-waiting').innerText = waitingQueue.count;
+
+            const statusEl = document.getElementById('stat-status');
+            if (bookedCount < TOTAL_SEATS) {
+                statusEl.className = 'text-sm font-semibold text-emerald-600 mt-2 flex items-center';
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-ping"></span> Seats Available (${TOTAL_SEATS - bookedCount})`;
+            } else {
+                statusEl.className = 'text-sm font-semibold text-amber-600 mt-2 flex items-center';
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 mr-2 animate-ping"></span> House Full (Waitlisting)`;
+            }
+        }
+
+        function seedRandomPassengers() {
+            const names = ['Ananya Roy', 'Vikram Das', 'Priya Patel', 'Siddharth Rao', 'Sneha Kapoor', 'Amitabh Sen', 'Tanya Verma'];
+            const genders = ['Female', 'Male', 'Female', 'Male', 'Female', 'Male', 'Female'];
+            
+            for (let i = 0; i < 5; i++) {
+                const randomName = names[Math.floor(Math.random() * names.length)];
+                const randomAge = Math.floor(Math.random() * 40) + 18;
+                const randomGender = genders[Math.floor(Math.random() * genders.length)];
+                processReservation(`${randomName}`, randomAge, randomGender);
+            }
+        }
+
+        function resetSystem() {
+            seats = new Array(TOTAL_SEATS).fill(null);
+            confirmedList = null;
+            waitingQueue = { front: null, rear: null, count: 0 };
+            pnrCounter = 1001;
+            updateUI();
+        }
+    </script>
+</body>
+</html>
